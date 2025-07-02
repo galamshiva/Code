@@ -1,1 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Finance Planner</title>
 
+  <!-- Bootstrap CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome CDN -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Styles -->
+  <style>
+    body {
+      padding-top: 60px;
+    }
+    .card-title {
+      font-weight: bold;
+    }
+    .d-none {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#"><i class="fas fa-wallet me-2"></i>Finance Planner</a>
+    </div>
+  </nav>
+
+  <div class="container mt-5">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="card bg-success text-white mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Total Income</h5>
+            <h2 id="total-income">₹0.00</h2>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card bg-danger text-white mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Total Expenses</h5>
+            <h2 id="total-expenses">₹0.00</h2>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card bg-primary text-white mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Current Balance</h5>
+            <h2 id="current-balance">₹0.00</h2>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <form id="transaction-form">
+          <div class="card mb-4">
+            <div class="card-header">Add Transaction</div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="type">
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Amount</label>
+                <input type="number" class="form-control" id="amount" placeholder="Enter amount" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-control" id="description" placeholder="Optional">
+              </div>
+              <button type="submit" class="btn btn-primary">Add</button>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="col-md-6">
+        <canvas id="chart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Transactions</div>
+      <div class="card-body">
+        <ul class="list-group" id="transactions-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const incomeEl = document.getElementById("total-income");
+    const expenseEl = document.getElementById("total-expenses");
+    const balanceEl = document.getElementById("current-balance");
+    const form = document.getElementById("transaction-form");
+    const list = document.getElementById("transactions-list");
+    const chartCtx = document.getElementById("chart").getContext("2d");
+
+    let income = 0;
+    let expense = 0;
+    const transactions = [];
+
+    const chart = new Chart(chartCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Income', 'Expenses'],
+        datasets: [{
+          label: 'Finance Overview',
+          data: [0, 0],
+          backgroundColor: ['green', 'red'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const type = document.getElementById("type").value;
+      const amount = parseFloat(document.getElementById("amount").value);
+      const description = document.getElementById("description").value;
+      if (!amount || amount <= 0) return;
+
+      const transaction = { type, amount, description };
+      transactions.push(transaction);
+      updateUI();
+      form.reset();
+    });
+
+    function updateUI() {
+      income = 0;
+      expense = 0;
+      list.innerHTML = "";
+
+      transactions.forEach(t => {
+        const item = document.createElement("li");
+        item.className = "list-group-item d-flex justify-content-between";
+        item.innerHTML = `${t.description || "Transaction"} <span class='${t.type === "income" ? "text-success" : "text-danger"}'>₹${t.amount.toFixed(2)}</span>`;
+        list.appendChild(item);
+
+        if (t.type === "income") income += t.amount;
+        else expense += t.amount;
+      });
+
+      const balance = income - expense;
+      incomeEl.textContent = `₹${income.toFixed(2)}`;
+      expenseEl.textContent = `₹${expense.toFixed(2)}`;
+      balanceEl.textContent = `₹${balance.toFixed(2)}`;
+
+      chart.data.datasets[0].data = [income, expense];
+      chart.update();
+    }
+  </script>
+</body>
+</html>
